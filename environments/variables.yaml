@@ -1,0 +1,306 @@
+vpc:
+  name: umwelt_vpc
+  region: "nyc3"
+  do_token: TBA
+  ip_range: 10.0.0.0/16
+  enable_dns_support: true
+  enable_dns_hostnames: true
+
+
+  
+
+tags:
+  droplet-loadbalancer: umwelt_loadbalancer
+  droplet-sit: umwelt_sit
+  droplet-monitoring: umwelt_monitoring
+  droplet-mainserver: umwelt_mainserver
+  droplet-database: umwelt_database
+  backup-storage: umwelt_backup
+  backend: umwelt-backend
+  Project: umwelt-app
+
+droplets:
+
+project_name: "umwelt_project"
+
+droplet_database:
+  do_token: TBA
+  count: 1
+  image: "ubuntu-22-04-x64"
+  name: droplet-database
+  region: nyc3
+  size: s-4vcpu-8gb
+  vpc_id: "9cca8d73-d270-457e-ada9-5361bd06641b"
+  ssh_keys: TBA
+  private_key_path: TBA 
+  tags: ["umwelt_app"]
+  allowed_cidr_blocks: ["0.0.0.0/0"]
+
+
+droplet_monitoring:
+  droplet_count: 1
+  image: "ubuntu-22-04-x64"
+  name: droplet-monitoring
+  region: nyc3
+  size: s-1vcpu-2gb 
+  vpc_id: "9cca8d73-d270-457e-ada9-5361bd06641b"
+  ssh_keys: TBA 
+  private_key_path: TBA 
+  app_port: 9100
+  tags: ["umwelt_app"]
+  do_token: TBA
+  project_name: "umwelt_project"  
+
+
+droplet_mainserver: 
+  count: 1
+  image: "ubuntu-20-04-x64"
+  name: droplet-mainserver
+  region: nyc3
+  size: s-8vcpu-16gb
+  vpc_id: "9cca8d73-d270-457e-ada9-5361bd06641b"
+  ssh_keys: TBA 
+  private_key_path: TBA 
+  tags: [umwelt_app]
+  do_token: TBA
+  project_name: "umwelt_project"
+  monitoring_private_ip: "10.0.0.5"
+  database_private_ip: "10.0.0.6"
+
+
+droplet_sit:
+  droplet_count: 1
+  image: "ubuntu-25-04-x64"
+  name: droplet-sit
+  region: nyc3
+  size: s-2vcpu-4gb
+  vpc_id: "9cca8d73-d270-457e-ada9-5361bd06641b"
+  tags: [umwelt_app]
+  ssh_keys: TBA
+  app_port: 3000
+  private_key_path: TBA 
+  project_name: "umwelt_project"
+  do_token: TBA 
+
+droplet_loadbalancer:
+  count: 1
+  image: "ubuntu-22-04-x64"
+  name: droplet-loadbalancer
+  region: nyc3
+  size: s-2vcpu-4gb
+  vpc_id: "9cca8d73-d270-457e-ada9-5361bd06641b"
+  tags: ["umwelt_app"]
+  ssh_keys: TBA 
+  private_key_path: TBA 
+  domain_name: "app.umwelt.com"
+  main_server_private_ip: "10.0.0.5"
+  health_check_port: 80
+  project_name: "umwelt_project"
+  do_token: TBA
+
+
+
+backup_storage:
+  volume_name: umwelt_backup
+  volume_region: nyc3
+  do_token: TBA
+  volume_size: 100
+  access_key: TBA
+  secret_key: TBA
+  endpoint: nyc3.digitaloceanspaces.com 
+  tags: [umwelt_app]
+  volume_description: "backup storage for umwelt app"
+  enable_backups: true
+
+
+backend:
+  name: umwelt-backend
+  region: nyc3
+  do_token: secret 
+  size_gigabytes: 10 
+  access_key: secret
+  secret_key: secret
+  endpoint: nyc3.digitaloceanspaces.com 
+  tags: [umwelt_app]
+  acl: private 
+  static_website:
+    enabled: true
+    index_document: index.html
+    error_document: error.html  
+  cors_rules:
+    - allowed_headers: ["*"]
+      allowed_methods: ["GET"]
+      allowed_origins: ["*"]
+      expose_headers: []
+      max_age_seconds: 3000
+  lifecycle_rules:
+    - enabled: true
+      prefix: ""
+      tags: []
+      transition:
+        days: 30
+        storage_class: "STANDARD_IA"
+      expiration:
+        days: 365
+      noncurrent_version_expiration:
+        days: 30  
+      abort_incomplete_multipart_upload_days: 7
+  versioning:
+    enabled: true
+  logging:
+    enabled: true
+    target_bucket: umwelt-backend
+    target_prefix: log/ 
+  replication:
+    enabled: false
+    role: ""
+    rules: []   
+  website:
+    enabled: false
+    index_document: index.html
+    error_document: error.html  
+  analytics:
+    enabled: false
+    prefix: ""  
+  tags: [umwelt_app]
+  cors_rules:
+    - allowed_headers: ["*"]
+      allowed_methods: ["PUT", "POST"]
+      allowed_origins: ["https://myapp.com"]
+      expose_headers: []
+      max_age_seconds: 3000
+  lifecycle_rules:
+    - enabled: true
+      prefix: ""
+      tags: []    
+      transition:
+        days: 30
+        storage_class: "STANDARD_IA"
+      expiration:
+        days: 365
+      noncurrent_version_expiration:
+        days: 30  
+      abort_incomplete_multipart_upload_days: 7
+  versioning:
+    enabled: true
+  logging:
+    enabled: true
+    target_bucket: umwelt-backend
+    target_prefix: log/ 
+  replication:
+    enabled: false
+    role: ""
+    rules: []       
+  Project: umwelt-app
+
+
+firewall: 
+  name: umwelt-firewall
+  do_token: TBA
+  inbound_rules:
+    - protocol: "tcp"
+      ports: "80"
+      sources:
+        addresses: ["0.0.0.0/0"]
+        tags: []
+        droplet_ids: []
+    - protocol: "tcp"
+      ports: "443"
+      sources:
+        addresses: ["0.0.0.0/0"]
+        tags: []
+        droplet_ids: [] 
+    - protocol: "tcp"
+      ports: "22" 
+      sources:
+        addresses: ["0.0.0.0/0"]
+        tags: []
+        droplet_ids: []
+    - protocol: "tcp"
+      ports: "3306"
+      sources:
+        addresses: []
+        tags: ["umwelt_mainserver", "umwelt_monitoring"]
+        droplet_ids: []
+    - protocol: "tcp"
+      ports: "5432"
+      sources:
+        addresses: []
+        tags: ["umwelt_mainserver", "umwelt_monitoring"]
+        droplet_ids: []
+    - protocol: "tcp"
+      ports: "6379"
+      sources:
+        addresses: []
+        tags: ["umwelt_mainserver", "umwelt_monitoring"]
+        droplet_ids: []
+    - protocol: "tcp"
+      ports: "3000"
+      sources:  
+        addresses: []
+        tags: ["umwelt_mainserver", "umwelt_monitoring"]
+        droplet_ids: []
+    - protocol: "tcp"
+      ports: "9000"
+      sources:  
+        addresses: []
+        tags: ["umwelt_mainserver", "umwelt_monitoring"]
+        droplet_ids: []
+    - protocol: "tcp" 
+      ports: "9090"
+      sources:  
+        addresses: []
+        tags: ["umwelt_mainserver", "umwelt_monitoring"]
+        droplet_ids: []
+    - protocol: "tcp"
+      ports: "9100"
+      sources:  
+        addresses: []
+        tags: ["umwelt_mainserver", "umwelt_monitoring"]
+        droplet_ids: []
+  outbound_rules:
+    - protocol: "tcp"
+      ports: "all"
+      destinations:
+        addresses: ["0.0.0.0/0"]
+        tags: []
+        droplet_ids: []     
+    - protocol: "udp"
+      ports: "all"
+      destinations:
+        addresses: ["0.0.0.0/0"]
+        tags: []
+        droplet_ids: [] 
+    - protocol: "icmp"
+      ports: "all"
+      destinations:
+        addresses: ["0.0.0.0/0"]
+        tags: []
+        droplet_ids: []       
+  tags: umwelt_app
+  droplet_tags: ["umwelt_loadbalancer", "umwelt_sit", "umwelt_monitoring", "umwelt_mainserver", "umwelt_database"]
+  Project: umwelt_project   
+  vpc_id: "umwelt_vpc"
+  droplet_ids: {}
+  private_ips:
+    main_server: "10.0.0.5"
+    database: "10.0.0.6"
+  load_balancer_private_ip: "10.0.0.10"
+  main_server_private_ip: "10.0.0.5"
+
+DNS:
+  domain_name: umwelt.com
+  do_token: TBA
+  lb_ip: "192.168.111.10"
+  main_ip: "192.168.133.11"
+  sit_ip: "192.168.144.12"
+  records:
+    - type: A
+      name: "@"
+      data: "load_balancer_ip"
+      ttl: 1800
+    - type: CNAME
+      name: "www"
+      data: "umwelt.com"
+      ttl: 1800  
+  Project: umwelt-project  
